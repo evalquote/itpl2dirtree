@@ -4,6 +4,8 @@
 AC_PREREQ([2.63])
 
 AC_INIT([itpl2dirtree], [1.0.0])
+AC_CONFIG_MACRO_DIRS([m4])
+
 AM_INIT_AUTOMAKE
 
 dnl AM_CONFIG_HEADER(config.h)

@@ -30,9 +30,7 @@ char *o_rmprefix = "";
 int org_rmprefixlen = 0;
 int rmprefixlen = 0;
 int checkrm = 0;
-
-const char * const PLDIR = "playlist";
-const char * const PLFILE = "999.m3u";
+char *o_pldir = "playlist";
 
 /* #define COUNT */
 
@@ -172,39 +170,19 @@ void dir(const char *name)
 
   if (o_dry) {
     if (o_verbose)
-      fprintf(stderr, "dry: mkdir %s/%s\n", PLDIR, name);
+      fprintf(stderr, "dry: mkdir %s/%s\n", o_pldir, name);
     return;
   }
 
-  snprintf(buf, sizeof(buf), "%s/%s", PLDIR, name);
+  snprintf(buf, sizeof(buf), "%s/%s", o_pldir, name);
   struct stat st;
-  if (stat(PLDIR, &st) < 0) {
-    mkdir(PLDIR, 0777);
+  if (stat(o_pldir, &st) < 0) {
+    mkdir(o_pldir, 0777);
   }
   if (mkdir(buf, 0777) < 0 && errno != EEXIST) {
     fprintf(stderr, "mkdir failed %d buf '%s'\n", errno, buf);
     perror("  mkdir");
   }
-}
-
-/* m3u 形式の playlist をそのディレクトリに作成する. 効果はなかった */
-FILE *
-mkm3u(const char *name)
-{
-  char buf[BUFSIZE];
-  FILE *fp = NULL;
-
-  if (o_verbose) fprintf(stderr, "mkm3u %s/%s/%s\n", PLDIR, name, PLFILE);
-  if (o_dry) return fp;
-
-  snprintf(buf, sizeof(buf), "%s/%s/%s", PLDIR, name, PLFILE);
-  fp = fopen(buf, "w");
-  if (fp) {
-    fprintf(fp, "#EXTM3U\n\n");
-  } else {
-    fprintf(stderr, "cannot create m3u %s\n", buf);
-  }
-  return fp;
 }
 
 void
@@ -240,7 +218,7 @@ command(const char *folder, const char *pname, int seq, struct _track *rp)
   
   char *sl = strrchr(lc, '/') + 1;
   snprintf(path1, sizeof(path1), "%s/%s", o_path, lc);
-  snprintf(path2, sizeof(path2), "%s/%s/%s/%03d_%s", PLDIR, folder, pname, seq, sl);
+  snprintf(path2, sizeof(path2), "%s/%s/%s/%03d_%s", o_pldir, folder, pname, seq, sl);
   if (o_verbose) {
     fprintf(stderr, "path1 (contents) '%s'\n", path1);
     fprintf(stderr, "path2 (file    ) '%s'\n", path2);
@@ -774,6 +752,7 @@ mygetopt (int argc, char *argv[])
       switch(*++str) {
       case 'p': optstr(o_path); break;
       case 'i': optstr(o_rmprefix); break;
+      case 'o': optstr(o_pldir); break;
       case 'c': o_check = 1; break;
       case 'n': o_dry++ ; break;
       case 'd': o_debug = 1; break;
