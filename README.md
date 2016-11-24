@@ -6,6 +6,12 @@ Mac iTnues playlist XML file (~/Music/iTunes/iTunes Music Library.xml).
 itpl2dirtree is useful when you are coping iTunes library to non-iTunes
 environment, such as Rasberry pi Volumio.
 
+Depend package:
+expat-dev
+
+Please install expat-dev
+for example
+apt-get install expat-dev
 
 Usage:
 itpl2dirtree -p music data ath -i original music data path [-o output] [-n] < file.xml
@@ -27,7 +33,7 @@ stdin: iTunes library XML file, if file does not exists, try following steps
 To find prefix string, search "Location" for XML file, for example,
 grep Location ~/Music/iTunes/'iTunes Music Library.xml' | head -1
 
-if output is some of follows, use file:///Users/evalquote/Music/iTunes/iTunes%20Media
+if output is some of follows, use file:///Users/evalquote/Music/iTunes/iTunes%20Media/
 
 <key>Location</key><string>file:///Users/evalquote/Music/iTunes/iTunes%20Media/Music/Kenneth%20Gilbert/Bach_%20Italian%20Concerto,%204%20Duos,%20Etc_/09%20Bach_%20Overture%20In%20The%20French%20Style,%20BWV%20831%20-%202.%20Courante.m4a</string>
 
