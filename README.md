@@ -1,16 +1,16 @@
-itpl2dirtree
+itpl2dirtree                         2016.12.5
 
-Create directory tree and symbolic link to entity according to
-Mac iTnues playlist XML file (~/Music/iTunes/iTunes Music Library.xml).
+Create a directory tree as playlist folder and symbolic links to music entity files
+according to a Mac iTnues playlist XML file (~/Music/iTunes/iTunes Music Library.xml).
 
-itpl2dirtree is useful when you are coping iTunes library to non-iTunes
+itpl2dirtree is useful when you are coping your iTunes library to a non-iTunes
 environment, such as Rasberry pi Volumio.
 
 Depend package:
 expat-dev
 
-Please install expat-dev
-for example
+Please install expat-dev, (on Volumio, do as follows)
+
 apt-get install expat-dev
 
 Usage:
@@ -29,6 +29,8 @@ stdin: iTunes library XML file, if file does not exists, try following steps
 3. Click the Advanced tab.
 4. Select "Share iTunes Library XML with other applications.
 
+
+About -i option:
 
 To find prefix string, search "Location" for XML file, for example,
 grep Location ~/Music/iTunes/'iTunes Music Library.xml' | head -1
