@@ -22,7 +22,7 @@
 FILE *dfs = NULL;  // stderr or /dev/null fd
 
 int o_dry = 0;
-int o_check = 0;    // track にあるが,  playlist にない
+int o_check = 0;     // show track not in playlist
 int o_verbose = 0;
 int o_debug = 0;
 char *o_path = "";
@@ -245,6 +245,7 @@ command(const char *folder, const char *pname, int seq, struct _track *rp)
 #if defined(__linux__)
   if (e_path1)   {
     struct timespec ts[2]; // access, modified
+    memset((void *)ts, 0, sizeof(ts));
     ts[0].tv_sec = st.st_atime;
     ts[1].tv_sec = st.st_mtime;
     if (utimensat(AT_FDCWD, path2, ts, AT_SYMLINK_NOFOLLOW) < 0) {
@@ -255,6 +256,7 @@ command(const char *folder, const char *pname, int seq, struct _track *rp)
 #else
   if (e_path1) {
     struct timeval times[2]; // access, modified
+    memset((void *)times, 0, sizeof(times));
     times[0].tv_sec = st.st_atime;
     times[1].tv_sec = st.st_mtime;
 
