@@ -1,10 +1,11 @@
-itpl2dirtree                         2016.12.5
+itpl2dirtree                         2017.2.6
 
-Create a directory tree as playlist folder and symbolic links to music entity files
-according to a Mac iTnues playlist XML file (~/Music/iTunes/iTunes Music Library.xml).
+Create a directory tree as playlist folder and symbolic links to music
+entity files according to a Mac iTnues playlist XML file
+(~/Music/iTunes/iTunes Music Library.xml).
 
-itpl2dirtree is useful when you are coping your iTunes library to a non-iTunes
-environment, such as Rasberry pi Volumio.
+itpl2dirtree is useful when you are coping your iTunes library to a
+non-iTunes environment, such as Rasberry pi Volumio.
 
 Depend package:
 expat-dev

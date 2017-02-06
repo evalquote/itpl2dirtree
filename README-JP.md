@@ -1,4 +1,4 @@
-itpl2dirtree                         2016.12.5
+itpl2dirtree                         2017.2.6
 
 Mac iTunes の音楽プレイリストファイル (~/Music/iTunes/iTunes Music Library.xml) に
 したがって Linux (や Mac) にディレクトリ木を生成します. iTunes の音楽ファイルフォルダ
@@ -59,5 +59,14 @@ scp -p ~/Music/iTunes/'iTunes Music Library.xml' volumio:Music/itpl.xml
 次に Volumio 上で実行
 cd /mnt/USB
 cat ~/Music/itpl.xml | itpl2dirtree -p ~/Music/data -i 'file:///Users/evalquote/Music/iTunes/iTunes%20Media/'
+
+================
+2017.2.6
+バグ修正:
+ struct timespec, struct timeval のメモリ領域のクリア忘れを修正
+
+機能追加:
+  Mac OS の大文字・小文字を区別しないファイルシステムに起因する
+  ファイルが見つからない現象を解消. 
 
 以上

@@ -88,8 +88,9 @@ struct al_hash_t *ttHash;     // tag/key string -> enum _tt
 struct al_hash_t *trackHash;  // Track Id str   -> struct _track *
 struct al_hash_t *ntrackHash; // Track Id str   -> count
 struct al_hash_t *folderHash; // folder pid -> name
+struct al_hash_t *realPathHash; // folder pid -> name
 
-// 状態を表わす
+// state
 int st_tracks = 0;    /* 0: no track, 1: key is tracks, 2: get track elements */
 int st_playlists = 0; /* 0: no pl,    1: playlists,  2: playlist items */
 
@@ -101,7 +102,7 @@ dump(struct _ud *ud, const char *msg0, const char *msg1)
   int sp = ud->sp;
   struct _dstack *dp = &ud->dstack[sp];
   fprintf(stderr, "sp %d kind %s keystr '%s' %s(%s)\n",
-	  sp, ttStr[dp->kind], dp->keystr, msg0, msg1);
+          sp, ttStr[dp->kind], dp->keystr, msg0, msg1);
 }
 
 char
@@ -186,6 +187,85 @@ void dir(const char *name)
 }
 
 void
+dirlist(const char *path, char *realpath, int bufsize)
+{
+  realpath[0] = '\0';
+  cstr_value_t fp = NULL;
+
+  int ret = item_get_str(realPathHash, path, &fp);
+  if (ret == 0) {
+    strncpy(realpath, fp, bufsize);
+    return;
+  }
+
+  char npathent[BUFSIZE];
+  char dirpath[BUFSIZE];
+
+  bzero((void *)dirpath, sizeof(dirpath));
+
+  char *lastslp = strrchr(path, '/');
+  if (lastslp) {
+    memcpy(dirpath, path, lastslp - path);
+    strncpy(npathent, lastslp + 1, BUFSIZE);
+  } else {
+    dirpath[0] = '.';
+    strncpy(npathent, path, BUFSIZE);
+  }
+
+  DIR *dirp = opendir(dirpath);
+  if (!dirp) return;
+
+  struct dirent *ent;
+
+  while ((ent = readdir(dirp)) != NULL) {
+    if (strcasecmp(npathent, ent->d_name) == 0) {
+      if (lastslp) {
+        strncpy(realpath, dirpath, bufsize);
+        strncat(realpath, "/", bufsize);
+        strncat(realpath, ent->d_name, bufsize);
+      } else {
+        strncpy(realpath, ent->d_name, bufsize);
+      }
+      break;
+    }
+  }
+  closedir(dirp);
+  if (realpath[0]) {
+    ret = item_set_str(realPathHash, path, realpath);
+    if (ret) fprintf(stderr, "dirlist() failed item_set_str ret %d\n", ret);
+  }
+}
+
+void
+searchFile(const char *mispath, char *realpath, int bufsize)
+{
+  char path[BUFSIZE];
+  strncpy(path, mispath, BUFSIZE);
+
+  char *pslp = path;  // save '/' position
+  if (path[0] != '/') pslp--;
+
+  struct stat st;
+  while (pslp) {
+    char *slp = strchr(pslp + 1, '/');
+    pslp = slp;
+    if (slp) *slp = '\0';
+
+    if (stat(path, &st) < 0) { // not found
+      char spath[BUFSIZE];
+      dirlist(path, spath, BUFSIZE);
+      if (spath[0]) {
+        strcpy(path, spath);  // overwriting, do not use strncpy
+      } else {
+        break;
+      }
+    }
+    if (slp) *slp = '/';
+  }
+  strncpy(realpath, path, bufsize);
+}
+
+void
 command(const char *folder, const char *pname, int seq, struct _track *rp)
 {
   const char *loc = rp->loc;
@@ -199,7 +279,7 @@ command(const char *folder, const char *pname, int seq, struct _track *rp)
   if (checkrm == 0) {
     if (strncmp(lc, o_rmprefix, org_rmprefixlen) != 0) {
       fprintf(stderr, "prefix string (-i option) '%s' is not prefix of Location '%s'\n",
-	      o_rmprefix, lc);
+              o_rmprefix, lc);
       free(lc);
       exit(1);
     }
@@ -229,8 +309,21 @@ command(const char *folder, const char *pname, int seq, struct _track *rp)
   int e_path1 = 1;
   struct stat st;
   if (stat(path1, &st) < 0 && o_dry < 2) {
-    fprintf(stderr, "stat no target '%s'\n", path1);
-    e_path1 = 0;
+
+    char path3[BUFSIZE];
+    searchFile(path1, path3, BUFSIZE);
+
+    if (stat(path3, &st) < 0 && o_dry < 2) {
+      fprintf(stderr, "stat no target '%s'\n", path1);
+      e_path1 = 0;
+
+    } else {
+      if (o_verbose) {
+        fprintf(stderr, "missing target '%s'\n", path1);
+        fprintf(stderr, "search  target '%s'\n", path3);
+      }
+      strncpy(path1, path3, BUFSIZE);
+    }
   }
 
   if (o_dry) {
@@ -240,6 +333,7 @@ command(const char *folder, const char *pname, int seq, struct _track *rp)
   if (symlink(path1, path2) < 0 && errno != EEXIST) {
     fprintf(stderr, "symlink %d '%s' '%s'\n", errno, path2, path1);
     perror("symlink");
+    e_path1 = 0;
   }
 
 #if defined(__linux__)
@@ -248,6 +342,7 @@ command(const char *folder, const char *pname, int seq, struct _track *rp)
     memset((void *)ts, 0, sizeof(ts));
     ts[0].tv_sec = st.st_atime;
     ts[1].tv_sec = st.st_mtime;
+
     if (utimensat(AT_FDCWD, path2, ts, AT_SYMLINK_NOFOLLOW) < 0) {
       fprintf(stderr, "utimensat errno %d path2 '%s'\n", errno, path2);
       perror("utimensat");
@@ -288,7 +383,7 @@ end_dict(struct _ud *udp)
               dp->keystr, tp->diskn, tp->diskc, tp->trackn, tp->trackc,
               tp->kind, tp->name, tp->artist, tp->album);
       if (tp->comments) {
-	fprintf(dfs, " '%s'", tp->comments);
+        fprintf(dfs, " '%s'", tp->comments);
       }
       fprintf(dfs, "\n");
       if (!tp->loc) {
@@ -299,8 +394,8 @@ end_dict(struct _ud *udp)
       if (ret) fprintf(stderr, "item_set_pointer ret %d\n", ret);
 
       if (o_check) {
-	ret = item_inc_init(ntrackHash, dp->keystr, (value_t)1, NULL);
-	if (ret < 0) fprintf(stderr, "ntrackHash inc %d\n", ret);
+        ret = item_inc_init(ntrackHash, dp->keystr, (value_t)1, NULL);
+        if (ret < 0) fprintf(stderr, "ntrackHash inc %d\n", ret);
       }
     } else {
       clear_track(tp);
@@ -320,21 +415,21 @@ end_dict(struct _ud *udp)
       if (ret != 0) fprintf(stderr, "item_get_pointer trackHash ret %d\n", ret);
 
       if (o_check) {
-	ret = item_inc_init(ntrackHash, tp->trackid, (value_t)1, NULL);
-	if (ret < 0) fprintf(stderr, "ntrackHash inc %d\n", ret);
+        ret = item_inc_init(ntrackHash, tp->trackid, (value_t)1, NULL);
+        if (ret < 0) fprintf(stderr, "ntrackHash inc %d\n", ret);
       }
 
       if (!rp->disabled) {
         if (!rp->loc) {
-	  // ファイル位置がない track が存在する
+          // track without loc, iTunes error
           fprintf(stderr, "null loc %s %s\n", atp->name, rp->name);
-	} else if (atp->ppid && atp->ppid[0] != '\0') {
-	  cstr_value_t fp = NULL;
-	  item_get_str(folderHash, atp->ppid, &fp);
-	  command(fp, atp->name, atp->plseq++, rp);
-	} else {
-	  fprintf(stderr, "no parent %s\n", atp->name);
-	}
+        } else if (atp->ppid && atp->ppid[0] != '\0') {
+          cstr_value_t fp = NULL;
+          item_get_str(folderHash, atp->ppid, &fp);
+          command(fp, atp->name, atp->plseq++, rp);
+        } else {
+          fprintf(stderr, "no parent %s\n", atp->name);
+        }
       }
     }
     clear_track(tp);
@@ -405,7 +500,7 @@ element_start(void *userData, const XML_Char *tag_name, const XML_Char *atts[])
           fprintf(dfs, "array start stack %d name '%s' master %d dkind %d folder %d pid %s ppid %s\n",
                   udp->sp, tp->name, tp->master, tp->dkind, tp->folder, tp->pid, tp->ppid);
 
-	  replace_sl(tp->name);
+          replace_sl(tp->name);
           if (tp->ppid && tp->ppid[0] != '\0') {
             char fbuf[BUFSIZE];
             cstr_value_t fp = NULL;
