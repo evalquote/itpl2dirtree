@@ -1,4 +1,4 @@
-itpl2dirtree                         2017.2.6
+itpl2dirtree                         2017.2.18
 
 Mac iTunes の音楽プレイリストファイル (~/Music/iTunes/iTunes Music Library.xml) に
 したがって Linux (や Mac) にディレクトリ木を生成します. iTunes の音楽ファイルフォルダ
@@ -68,5 +68,10 @@ cat ~/Music/itpl.xml | itpl2dirtree -p ~/Music/data -i 'file:///Users/evalquote/
 機能追加:
   Mac OS の大文字・小文字を区別しないファイルシステムに起因する
   ファイルが見つからない現象を解消. 
+
+2017.2.18
+機能追加:
+  playlistにダブルクオート文字 (") が使われているとvolumioのscanが
+  失敗するので, ダブルクオートをシングルクオートに変換する. 
 
 以上

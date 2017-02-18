@@ -1,4 +1,4 @@
-itpl2dirtree                         2017.2.6
+itpl2dirtree                         2017.2.18
 
 Create a directory tree as playlist folder and symbolic links to music
 entity files according to a Mac iTnues playlist XML file

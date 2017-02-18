@@ -144,6 +144,9 @@ replace_sl(char *str) {
   while ((sp = strchr(str, '/')) != NULL) {
     *sp++ = '_';
   }
+  while ((sp = strchr(str, '"')) != NULL) {
+    *sp++ = '\'';
+  }
 }
 
 void
@@ -510,6 +513,7 @@ element_start(void *userData, const XML_Char *tag_name, const XML_Char *atts[])
           }
         }
         if (tp->folder) {
+          replace_sl(tp->name);
           char buf[BUFSIZE];
           if (tp->ppid && tp->ppid[0] != '\0') {
             cstr_value_t pstr = NULL;
